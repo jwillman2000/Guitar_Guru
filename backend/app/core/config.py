@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     environment: str = "dev"
     cors_origins: list[str] = ["http://localhost:5173"]
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5432/app_dev"
 
 
 settings = Settings()

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Fretboard } from '../../components/fretboard/Fretboard'
 import { TagChips } from '../../components/TagChips'
 import { apiPost } from '../../lib/api'
 import { BUILT_IN_GENRES } from '../../lib/genres'
@@ -143,6 +144,9 @@ export function FretboardLiteracyPage() {
         <div className="max-w-xl">
           <h2 className="mb-2 font-medium">{drill.title}</h2>
           <TagChips genreTags={drill.genreTags} techniqueTags={drill.techniqueTags} />
+          <div className="mb-4">
+            <Fretboard notes={drill.notes} />
+          </div>
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-neutral-300 dark:border-neutral-700">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Fretboard } from '../../components/fretboard/Fretboard'
 import { TabViewer } from '../../components/tab/TabViewer'
 import { TagChips } from '../../components/TagChips'
 import { apiDelete, apiGet } from '../../lib/api'
@@ -71,6 +72,10 @@ export function LickDetailPage() {
               Crosses Scale Fluency position(s): {lick.scalePositions.join(', ')}
             </p>
           )}
+
+          <div className="mb-4">
+            <Fretboard notes={lick.notes} />
+          </div>
 
           <TabViewer title={lick.title} />
         </>

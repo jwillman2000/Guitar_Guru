@@ -41,8 +41,11 @@ export interface GeneratedDrill extends ExerciseBase {
 export interface CanonicalLick extends ExerciseBase {
   source: 'canonical'
   moduleId: 'lick-library'
-  artist: string
+  artist: string | null
   song: string
+  key: string
+  difficulty: string
+  description: string | null
   scalePositions: number[] // positions this lick crosses, ties back to Module 2
 }
 

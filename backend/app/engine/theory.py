@@ -73,6 +73,20 @@ SCALE_INTERVALS: dict[str, list[int]] = {
     name: [interval for _, interval in degrees] for name, degrees in SCALE_DEGREES.items()
 }
 
+# Triad formulas, same (letter-offset, semitone-offset) shape as SCALE_DEGREES
+# — a triad's degrees (root, 3rd, 5th) sit at letter-offsets 0/2/4 in the same
+# 7-note diatonic cycle scales use, so the identical spelling algorithm below
+# applies unchanged. Used by Module 4's sweep-picking arpeggios.
+ARPEGGIO_DEGREES: dict[str, list[tuple[int, int]]] = {
+    "major_triad": [(0, 0), (2, 4), (4, 7)],
+    "minor_triad": [(0, 0), (2, 3), (4, 7)],
+    "diminished_triad": [(0, 0), (2, 3), (4, 6)],
+}
+
+ARPEGGIO_INTERVALS: dict[str, list[int]] = {
+    name: [interval for _, interval in degrees] for name, degrees in ARPEGGIO_DEGREES.items()
+}
+
 _ACCIDENTAL_SYMBOLS = {0: "", 1: "#", 2: "##", -1: "b", -2: "bb"}
 
 
@@ -87,6 +101,27 @@ class Drill:
 
 def fret_to_midi(string: int, fret: int) -> int:
     return OPEN_STRING_MIDI[string] + fret
+
+
+def _pitch_class_spelling(key: str, degrees: list[tuple[int, int]]) -> dict[int, str]:
+    """Shared spelling core for both scales and arpeggios (same algorithm,
+    just a different degree/interval table) — see scale_pitch_class_spelling
+    for the full rationale.
+    """
+    letter, accidental = KEY_LETTER_ACCIDENTAL[key]
+    root_pc = (LETTER_NATURAL_PITCH_CLASS[letter] + accidental) % 12
+    start_index = LETTERS_CYCLE.index(letter)
+
+    spelling: dict[int, str] = {}
+    for letter_offset, interval in degrees:
+        degree_letter = LETTERS_CYCLE[(start_index + letter_offset) % 7]
+        target_pc = (root_pc + interval) % 12
+        diff = target_pc - LETTER_NATURAL_PITCH_CLASS[degree_letter]
+        diff = (diff + 6) % 12 - 6  # normalize to [-6, 5]
+        if diff not in _ACCIDENTAL_SYMBOLS:
+            raise ValueError(f"Degree {degree_letter} needs an unsupported accidental ({diff})")
+        spelling[target_pc] = f"{degree_letter}{_ACCIDENTAL_SYMBOLS[diff]}"
+    return spelling
 
 
 def scale_pitch_class_spelling(key: str, scale: str) -> dict[int, str]:
@@ -108,38 +143,99 @@ def scale_pitch_class_spelling(key: str, scale: str) -> dict[int, str]:
         raise ValueError(f"Unsupported key: {key!r}")
     if scale not in SCALE_DEGREES:
         raise ValueError(f"Unsupported scale: {scale!r}. Supported scales: {sorted(SCALE_DEGREES)}")
+    return _pitch_class_spelling(key, SCALE_DEGREES[scale])
 
+
+def arpeggio_pitch_class_spelling(key: str, chord_type: str) -> dict[int, str]:
+    """Same spelling algorithm as scale_pitch_class_spelling, for triads."""
+    if key not in SUPPORTED_KEYS:
+        raise ValueError(f"Unsupported key: {key!r}")
+    if chord_type not in ARPEGGIO_DEGREES:
+        raise ValueError(f"Unsupported chord_type: {chord_type!r}. Supported: {sorted(ARPEGGIO_DEGREES)}")
+    return _pitch_class_spelling(key, ARPEGGIO_DEGREES[chord_type])
+
+
+def _ascending_tones(key: str, intervals: list[int], start_midi: int, count: int) -> list[int]:
+    """Shared core for ascending_scale_tones/ascending_arpeggio_tones."""
     letter, accidental = KEY_LETTER_ACCIDENTAL[key]
     root_pc = (LETTER_NATURAL_PITCH_CLASS[letter] + accidental) % 12
-    start_index = LETTERS_CYCLE.index(letter)
+    pitch_classes = {(root_pc + interval) % 12 for interval in intervals}
 
-    spelling: dict[int, str] = {}
-    for letter_offset, interval in SCALE_DEGREES[scale]:
-        degree_letter = LETTERS_CYCLE[(start_index + letter_offset) % 7]
-        target_pc = (root_pc + interval) % 12
-        diff = target_pc - LETTER_NATURAL_PITCH_CLASS[degree_letter]
-        diff = (diff + 6) % 12 - 6  # normalize to [-6, 5]
-        if diff not in _ACCIDENTAL_SYMBOLS:
-            raise ValueError(f"Degree {degree_letter} of {key} {scale} needs an unsupported accidental ({diff})")
-        spelling[target_pc] = f"{degree_letter}{_ACCIDENTAL_SYMBOLS[diff]}"
-    return spelling
+    tones = []
+    midi = start_midi
+    while len(tones) < count:
+        if midi % 12 in pitch_classes:
+            tones.append(midi)
+        midi += 1
+    return tones
 
 
 def ascending_scale_tones(key: str, scale: str, start_midi: int, count: int) -> list[int]:
     """The `count` lowest MIDI notes >= start_midi whose pitch class is in the scale."""
     if scale not in SCALE_INTERVALS:
         raise ValueError(f"Unsupported scale: {scale!r}. Supported scales: {sorted(SCALE_INTERVALS)}")
-    letter, accidental = KEY_LETTER_ACCIDENTAL[key]
-    root_pc = (LETTER_NATURAL_PITCH_CLASS[letter] + accidental) % 12
-    scale_pitch_classes = {(root_pc + interval) % 12 for interval in SCALE_INTERVALS[scale]}
+    return _ascending_tones(key, SCALE_INTERVALS[scale], start_midi, count)
 
-    tones = []
-    midi = start_midi
-    while len(tones) < count:
-        if midi % 12 in scale_pitch_classes:
-            tones.append(midi)
-        midi += 1
-    return tones
+
+def ascending_arpeggio_tones(key: str, chord_type: str, start_midi: int, count: int) -> list[int]:
+    """The `count` lowest MIDI notes >= start_midi whose pitch class is in the arpeggio."""
+    if chord_type not in ARPEGGIO_INTERVALS:
+        raise ValueError(f"Unsupported chord_type: {chord_type!r}. Supported: {sorted(ARPEGGIO_INTERVALS)}")
+    return _ascending_tones(key, ARPEGGIO_INTERVALS[chord_type], start_midi, count)
+
+
+def nearest_diatonic_tones_per_string(
+    strings: list[int], start_fret: int, pitch_classes: set[int], spelling: dict[int, str]
+) -> list[dict]:
+    """For each string in order, the lowest fret >= start_fret whose pitch
+    class is in `pitch_classes` — a compact, single-position cross-string
+    note selection.
+
+    Unlike assign_tones_to_strings (one continuous ascending MIDI run sliced
+    across strings, which only works when several notes share a string —
+    3nps/2nps have room to climb within a string before the next string's
+    open pitch catches up), this computes each string independently, so it's
+    correct for one-note-per-string patterns (Module 4's alternate/economy/
+    string-skipping/hybrid/sweep picking) where there's no such room.
+    """
+    notes = []
+    for string in strings:
+        fret = start_fret
+        while fret_to_midi(string, fret) % 12 not in pitch_classes:
+            fret += 1
+            if fret > MAX_FRET:
+                raise ValueError(f"No matching tone found on string {string} within fret range from {start_fret}")
+        midi = fret_to_midi(string, fret)
+        octave = midi // 12 - 1
+        notes.append({"position": {"string": string, "fret": fret}, "pitch": f"{spelling[midi % 12]}{octave}"})
+    return notes
+
+
+def assign_tones_to_strings(
+    tones: list[int], strings: list[int], notes_per_string: int, spelling: dict[int, str]
+) -> list[dict]:
+    """Slice an ascending tone list across a given string order, computing
+    each note's fret and spelled pitch. `strings` need not be consecutive or
+    descending — Module 4's string-skipping/sweep-picking drills pass custom
+    orders through this same shared logic that Module 2's scale patterns use.
+    """
+    notes = []
+    for index, string in enumerate(strings):
+        for tone_midi in tones[index * notes_per_string : (index + 1) * notes_per_string]:
+            fret = tone_midi - OPEN_STRING_MIDI[string]
+            if not (0 <= fret <= MAX_FRET):
+                raise ValueError(
+                    f"Pattern exceeds playable fret range on string {string} (fret {fret}); "
+                    "try different starting parameters."
+                )
+            octave = tone_midi // 12 - 1
+            notes.append(
+                {
+                    "position": {"string": string, "fret": fret},
+                    "pitch": f"{spelling[tone_midi % 12]}{octave}",
+                }
+            )
+    return notes
 
 
 def midi_to_pitch_name(midi: int, key: str) -> str:

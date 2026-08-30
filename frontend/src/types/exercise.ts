@@ -23,6 +23,8 @@ export interface NoteEvent {
   pitch: string // e.g. "G4", spelled per key context
   startBeat: number
   durationBeats: number
+  pickDirection?: 'down' | 'up' // Picking Technique drills only
+  pluckMethod?: 'pick' | 'finger' // hybrid picking only
 }
 
 export interface ExerciseBase {

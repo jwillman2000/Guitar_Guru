@@ -6,19 +6,16 @@ computed for each position is always rule-based, never freehanded.
 """
 
 import random
-from dataclasses import dataclass, field
 
-from app.engine.theory import SUPPORTED_KEYS, fret_to_midi, midi_to_pitch_name
-
-MAX_FRET = 15  # matches the frontend Fretboard.tsx FRET_COUNT constant
-MIN_STRING, MAX_STRING = 1, 6
-
-
-@dataclass
-class FretboardDrill:
-    title: str
-    parameters: dict
-    notes: list[dict] = field(default_factory=list)  # [{"position": {"string", "fret"}, "pitch"}]
+from app.engine.theory import (
+    MAX_FRET,
+    MAX_STRING,
+    MIN_STRING,
+    SUPPORTED_KEYS,
+    Drill,
+    fret_to_midi,
+    midi_to_pitch_name,
+)
 
 
 def generate_drill(
@@ -27,7 +24,7 @@ def generate_drill(
     fret_range: tuple[int, int] = (0, 15),
     count: int = 8,
     rng: random.Random | None = None,
-) -> FretboardDrill:
+) -> Drill:
     if key not in SUPPORTED_KEYS:
         raise ValueError(f"Unsupported key: {key!r}. Supported keys: {sorted(SUPPORTED_KEYS)}")
 
@@ -57,7 +54,7 @@ def generate_drill(
         for string, fret in chosen
     ]
 
-    return FretboardDrill(
+    return Drill(
         title=f"Fretboard Literacy — Key of {key}",
         parameters={
             "key": key,

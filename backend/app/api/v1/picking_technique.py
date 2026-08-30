@@ -11,11 +11,22 @@ from app.engine import (
     generate_tremolo_drill,
 )
 from app.engine.theory import Drill
-from app.models import Exercise, Module
+from app.models import Exercise, Module, TagCategory
 from app.schemas.exercise import GeneratedDrillOut
 from app.schemas.picking_technique import GeneratePickingTechniqueRequest
+from app.tagging import resolve_tag_by_name, split_tags
 
 router = APIRouter(prefix="/picking-technique", tags=["picking-technique"])
+
+# The engine's technique values don't match the seeded tag names exactly.
+TECHNIQUE_TAG_NAMES = {
+    "alternate": "Alternate Picking",
+    "economy": "Economy Picking",
+    "tremolo": "Tremolo Picking",
+    "string_skipping": "String Skipping",
+    "sweep": "Sweep Picking",
+    "hybrid": "Hybrid Picking",
+}
 
 
 def _generate(payload: GeneratePickingTechniqueRequest) -> Drill:
@@ -62,21 +73,29 @@ def generate(payload: GeneratePickingTechniqueRequest, db: Session = Depends(get
         for index, note in enumerate(drill.notes)
     ]
 
+    tags = [resolve_tag_by_name(db, TagCategory.TECHNIQUE, TECHNIQUE_TAG_NAMES[payload.technique])]
+    if payload.genre:
+        tags.append(resolve_tag_by_name(db, TagCategory.GENRE, payload.genre))
+
     exercise = Exercise(
         module=Module.PICKING_TECHNIQUE,
         title=drill.title,
         difficulty=payload.difficulty,
         parameters=drill.parameters,
         reference_data=reference_data,
+        tags=tags,
     )
     db.add(exercise)
     db.commit()
     db.refresh(exercise)
 
+    genre_tags, technique_tags = split_tags(exercise.tags)
     return GeneratedDrillOut(
         id=str(exercise.id),
         title=exercise.title,
         notes=reference_data,
         module_id="picking-technique",
         generator_params=exercise.parameters,
+        genre_tags=genre_tags,
+        technique_tags=technique_tags,
     )

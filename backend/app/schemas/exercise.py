@@ -49,6 +49,7 @@ class GenerateFretboardLiteracyRequest(CamelModel):
     fret_range: tuple[int, int] = (0, MAX_FRET)
     count: int = 8
     difficulty: str = "standard"
+    genre: str | None = None
 
 
 class GenerateScaleFluencyRequest(CamelModel):
@@ -58,3 +59,4 @@ class GenerateScaleFluencyRequest(CamelModel):
     start_fret: int = 0
     num_strings: int = 6
     difficulty: str = "standard"
+    genre: str | None = None

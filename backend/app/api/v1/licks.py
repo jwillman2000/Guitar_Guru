@@ -2,27 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
-from app.models import Lick, Tag, TagCategory
+from app.models import Lick, Tag
 from app.schemas.lick import LickCreate, LickOut
+from app.tagging import split_tags
 
 router = APIRouter(prefix="/licks", tags=["licks"])
 
 
-def _split_tags(tags: list[Tag]) -> tuple[list[str], list[str]]:
-    """Separate a lick's tags into (genre names, technique names).
-
-    Position-category tags aren't surfaced here — a lick's actual position
-    coverage is the more precise `scale_positions` field, not a browsable tag
-    label. Kept as a plain function over in-memory Tag objects so it doesn't
-    need a DB to unit test.
-    """
-    genre_tags = [tag.name for tag in tags if tag.category == TagCategory.GENRE]
-    technique_tags = [tag.name for tag in tags if tag.category == TagCategory.TECHNIQUE]
-    return genre_tags, technique_tags
-
-
 def _to_lick_out(lick: Lick) -> LickOut:
-    genre_tags, technique_tags = _split_tags(lick.tags)
+    genre_tags, technique_tags = split_tags(lick.tags)
     return LickOut(
         id=str(lick.id),
         title=lick.title,

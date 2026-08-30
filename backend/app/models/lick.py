@@ -19,9 +19,11 @@ class Lick(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
     artist: Mapped[str | None] = mapped_column(String(200), default=None)
+    song: Mapped[str] = mapped_column(String(200))
     key: Mapped[str] = mapped_column(String(20))
     difficulty: Mapped[str] = mapped_column(String(50))
     description: Mapped[str | None] = mapped_column(Text, default=None)
     reference_data: Mapped[dict] = mapped_column(JSONB)
+    scale_positions: Mapped[list[int]] = mapped_column(JSONB, default=list)
 
     tags: Mapped[list[Tag]] = relationship(secondary=lick_tags)

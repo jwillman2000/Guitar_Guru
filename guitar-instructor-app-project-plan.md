@@ -45,6 +45,7 @@ Assignee key: **Jeremy** = requires your accounts/credentials/hands-on action. *
 | Fretboard note-mapping engine (Module 1) | Claude | Foundation other modules build on |
 | Scale fluency generator (Module 2) | Claude | Position-crossing exercise logic |
 | Lick library data model + viewer (Module 3) | Claude | Ties into Module 2 positions |
+| Lick authoring UI (create/edit licks in-app) (Module 3) | Claude | Replaces the Swagger-only `POST /licks` entry point from the initial viewer pass — hand-curated entry should happen in-app, not via API docs |
 | Picking/technique engine + BPM tracker (Module 4) | Claude | |
 | Genre tagging/filtering across all modules | Claude | Cross-cutting per the spec |
 | Functional review + musical accuracy feedback on each module | Jeremy | Your guitar expertise is the QA here |

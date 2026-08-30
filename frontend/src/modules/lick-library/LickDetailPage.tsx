@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { TabViewer } from '../../components/tab/TabViewer'
-import { apiGet } from '../../lib/api'
+import { apiDelete, apiGet } from '../../lib/api'
 import type { CanonicalLick } from '../../types/exercise'
 
 export function LickDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [lick, setLick] = useState<CanonicalLick | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -16,6 +17,16 @@ export function LickDetailPage() {
       .then(setLick)
       .catch((err: Error) => setError(err.message))
   }, [id])
+
+  async function handleDelete() {
+    if (!window.confirm(`Delete "${lick?.title}"? This can't be undone.`)) return
+    try {
+      await apiDelete(`/api/v1/licks/${id}`)
+      navigate('/lick-library')
+    } catch (err) {
+      setError((err as Error).message)
+    }
+  }
 
   return (
     <section className="p-6">
@@ -28,7 +39,23 @@ export function LickDetailPage() {
 
       {lick && (
         <>
-          <h1 className="mb-1 text-2xl font-semibold">{lick.title}</h1>
+          <div className="mb-1 flex items-center justify-between">
+            <h1 className="text-2xl font-semibold">{lick.title}</h1>
+            <div className="flex gap-2">
+              <Link
+                to={`/lick-library/${lick.id}/edit`}
+                className="rounded border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={handleDelete}
+                className="rounded border border-red-400 px-3 py-1.5 text-sm text-red-500"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
           <p className="mb-4 text-neutral-500">
             {lick.song}
             {lick.artist ? ` — ${lick.artist}` : ''} · Key: {lick.key} · Difficulty: {lick.difficulty}

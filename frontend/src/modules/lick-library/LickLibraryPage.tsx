@@ -15,7 +15,12 @@ export function LickLibraryPage() {
 
   return (
     <section className="p-6">
-      <h1 className="mb-4 text-2xl font-semibold">Lick Library</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Lick Library</h1>
+        <Link to="/lick-library/new" className="rounded bg-purple-600 px-3 py-1.5 text-sm text-white">
+          + Add Lick
+        </Link>
+      </div>
       <p className="mb-6 text-neutral-500">
         Hand-curated iconic licks, tagged back to Scale Fluency positions.
       </p>

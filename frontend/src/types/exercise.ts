@@ -11,6 +11,7 @@ export type Technique =
   | 'string-skipping'
   | 'hybrid-picking'
   | 'tremolo'
+  | (string & {})
 
 export interface FretPosition {
   string: number // 1 (high E) – 6 (low E)

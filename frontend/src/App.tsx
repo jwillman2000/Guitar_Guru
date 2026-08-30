@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { NavBar } from './components/layout/NavBar'
 import { FretboardLiteracyPage } from './modules/fretboard-literacy/FretboardLiteracyPage'
 import { LickDetailPage } from './modules/lick-library/LickDetailPage'
+import { LickFormPage } from './modules/lick-library/LickFormPage'
 import { LickLibraryPage } from './modules/lick-library/LickLibraryPage'
 import { PickingTechniquePage } from './modules/picking-technique/PickingTechniquePage'
 import { ScaleFluencyPage } from './modules/scale-fluency/ScaleFluencyPage'
@@ -15,6 +16,8 @@ function App() {
         <Route path="/fretboard-literacy" element={<FretboardLiteracyPage />} />
         <Route path="/scale-fluency" element={<ScaleFluencyPage />} />
         <Route path="/lick-library" element={<LickLibraryPage />} />
+        <Route path="/lick-library/new" element={<LickFormPage />} />
+        <Route path="/lick-library/:id/edit" element={<LickFormPage />} />
         <Route path="/lick-library/:id" element={<LickDetailPage />} />
         <Route path="/picking-technique" element={<PickingTechniquePage />} />
       </Routes>

@@ -22,3 +22,4 @@ class GeneratePickingTechniqueRequest(CamelModel):
     skip: int = 2  # string_skipping only
     repeat_count: int = 8  # tremolo only
     difficulty: str = "standard"
+    genre: str | None = None

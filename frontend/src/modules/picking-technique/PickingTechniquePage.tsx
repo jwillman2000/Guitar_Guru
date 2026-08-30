@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { TagChips } from '../../components/TagChips'
 import { apiPost } from '../../lib/api'
+import { BUILT_IN_GENRES, GENRE_PRESETS } from '../../lib/genres'
 import { createMetronome, type Metronome } from '../../lib/metronome'
 import type { GeneratedDrill } from '../../types/exercise'
 
@@ -42,6 +44,7 @@ export function PickingTechniquePage() {
   const [fret, setFret] = useState(0)
   const [skip, setSkip] = useState(2)
   const [repeatCount, setRepeatCount] = useState(8)
+  const [genre, setGenre] = useState('')
 
   const [drill, setDrill] = useState<GeneratedDrill | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -73,6 +76,14 @@ export function PickingTechniquePage() {
     }
   }
 
+  function handleGenreChange(next: string) {
+    setGenre(next)
+    const preset = GENRE_PRESETS[next]
+    if (!preset) return
+    if (preset.scale && usesScale(technique)) setScale(preset.scale)
+    if (preset.chordType && technique === 'sweep') setChordType(preset.chordType)
+  }
+
   async function handleGenerate() {
     setError(null)
     setDrill(null)
@@ -90,6 +101,7 @@ export function PickingTechniquePage() {
       body.fret = fret
       body.repeatCount = repeatCount
     }
+    if (genre) body.genre = genre
 
     try {
       const result = await apiPost<GeneratedDrill>('/api/v1/picking-technique/generate', body)
@@ -177,6 +189,22 @@ export function PickingTechniquePage() {
               </select>
             </div>
           )}
+
+          <div className="flex-1">
+            <label className="mb-1 block text-sm font-medium">Genre (optional)</label>
+            <select
+              className="w-full rounded border border-neutral-300 p-2 dark:border-neutral-700 dark:bg-neutral-900"
+              value={genre}
+              onChange={(e) => handleGenreChange(e.target.value)}
+            >
+              <option value="">None</option>
+              {BUILT_IN_GENRES.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {usesStringRange(technique) && (
@@ -280,6 +308,7 @@ export function PickingTechniquePage() {
       {drill && (
         <div className="mb-8 max-w-xl">
           <h2 className="mb-2 font-medium">{drill.title}</h2>
+          <TagChips genreTags={drill.genreTags} techniqueTags={drill.techniqueTags} />
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-neutral-300 dark:border-neutral-700">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { TabViewer } from '../../components/tab/TabViewer'
+import { TagChips } from '../../components/TagChips'
 import { apiDelete, apiGet } from '../../lib/api'
 import type { CanonicalLick } from '../../types/exercise'
 
@@ -63,18 +64,7 @@ export function LickDetailPage() {
 
           {lick.description && <p className="mb-4">{lick.description}</p>}
 
-          <div className="mb-4 flex flex-wrap gap-2 text-sm">
-            {lick.genreTags.map((tag) => (
-              <span key={tag} className="rounded-full bg-purple-100 px-2 py-0.5 dark:bg-purple-900">
-                {tag}
-              </span>
-            ))}
-            {lick.techniqueTags.map((tag) => (
-              <span key={tag} className="rounded-full bg-neutral-200 px-2 py-0.5 dark:bg-neutral-800">
-                {tag}
-              </span>
-            ))}
-          </div>
+          <TagChips genreTags={lick.genreTags} techniqueTags={lick.techniqueTags} />
 
           {lick.scalePositions.length > 0 && (
             <p className="mb-6 text-sm text-neutral-500">

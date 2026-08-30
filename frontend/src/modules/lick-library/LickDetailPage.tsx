@@ -77,7 +77,7 @@ export function LickDetailPage() {
             <Fretboard notes={lick.notes} />
           </div>
 
-          <TabViewer title={lick.title} />
+          <TabViewer title={lick.title} notes={lick.notes} />
         </>
       )}
     </section>

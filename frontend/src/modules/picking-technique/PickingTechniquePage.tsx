@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Fretboard } from '../../components/fretboard/Fretboard'
+import { TabViewer } from '../../components/tab/TabViewer'
 import { TagChips } from '../../components/TagChips'
 import { apiPost } from '../../lib/api'
 import { BUILT_IN_GENRES, GENRE_PRESETS } from '../../lib/genres'
@@ -312,6 +313,9 @@ export function PickingTechniquePage() {
           <TagChips genreTags={drill.genreTags} techniqueTags={drill.techniqueTags} />
           <div className="mb-4">
             <Fretboard notes={drill.notes} />
+          </div>
+          <div className="mb-4">
+            <TabViewer title={drill.title} notes={drill.notes} />
           </div>
           <table className="w-full text-left text-sm">
             <thead>

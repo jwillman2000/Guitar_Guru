@@ -52,13 +52,17 @@ def get_lick(lick_id: int, db: Session = Depends(get_db)) -> LickOut:
     return _to_lick_out(lick)
 
 
-@router.post("/", response_model=LickOut)
-def create_lick(payload: LickCreate, db: Session = Depends(get_db)) -> LickOut:
-    tags = db.query(Tag).filter(Tag.id.in_(payload.tag_ids)).all()
-    found_ids = {tag.id for tag in tags}
-    missing_ids = set(payload.tag_ids) - found_ids
+def _resolve_tags(db: Session, tag_ids: list[int]) -> list[Tag]:
+    tags = db.query(Tag).filter(Tag.id.in_(tag_ids)).all()
+    missing_ids = set(tag_ids) - {tag.id for tag in tags}
     if missing_ids:
         raise HTTPException(status_code=400, detail=f"Unknown tag_ids: {sorted(missing_ids)}")
+    return tags
+
+
+@router.post("/", response_model=LickOut)
+def create_lick(payload: LickCreate, db: Session = Depends(get_db)) -> LickOut:
+    tags = _resolve_tags(db, payload.tag_ids)
 
     lick = Lick(
         title=payload.title,
@@ -76,3 +80,36 @@ def create_lick(payload: LickCreate, db: Session = Depends(get_db)) -> LickOut:
     db.refresh(lick)
 
     return _to_lick_out(lick)
+
+
+@router.put("/{lick_id}", response_model=LickOut)
+def update_lick(lick_id: int, payload: LickCreate, db: Session = Depends(get_db)) -> LickOut:
+    lick = db.get(Lick, lick_id)
+    if lick is None:
+        raise HTTPException(status_code=404, detail=f"Lick {lick_id} not found")
+
+    tags = _resolve_tags(db, payload.tag_ids)
+
+    lick.title = payload.title
+    lick.artist = payload.artist
+    lick.song = payload.song
+    lick.key = payload.key
+    lick.difficulty = payload.difficulty
+    lick.description = payload.description
+    lick.reference_data = [note.model_dump(by_alias=True) for note in payload.notes]
+    lick.scale_positions = payload.scale_positions
+    lick.tags = tags
+
+    db.commit()
+    db.refresh(lick)
+
+    return _to_lick_out(lick)
+
+
+@router.delete("/{lick_id}", status_code=204)
+def delete_lick(lick_id: int, db: Session = Depends(get_db)) -> None:
+    lick = db.get(Lick, lick_id)
+    if lick is None:
+        raise HTTPException(status_code=404, detail=f"Lick {lick_id} not found")
+    db.delete(lick)
+    db.commit()

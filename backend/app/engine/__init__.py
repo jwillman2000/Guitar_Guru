@@ -5,5 +5,6 @@
 # internal knowledge of how drills are generated — see Article V.
 
 from app.engine.fretboard_literacy import generate_drill as generate_fretboard_literacy_drill
+from app.engine.scale_fluency import generate_scale_pattern as generate_scale_fluency_drill
 
-__all__ = ["generate_fretboard_literacy_drill"]
+__all__ = ["generate_fretboard_literacy_drill", "generate_scale_fluency_drill"]

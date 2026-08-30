@@ -28,6 +28,8 @@ class NoteEventOut(CamelModel):
     pitch: str
     start_beat: float
     duration_beats: float
+    pick_direction: Literal["down", "up"] | None = None
+    pluck_method: Literal["pick", "finger"] | None = None
 
 
 class GeneratedDrillOut(CamelModel):

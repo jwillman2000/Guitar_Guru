@@ -16,11 +16,11 @@ from app.engine.theory import (
     MAX_FRET,
     MAX_STRING,
     MIN_STRING,
-    OPEN_STRING_MIDI,
     SCALE_INTERVALS,
     SUPPORTED_KEYS,
     Drill,
     ascending_scale_tones,
+    assign_tones_to_strings,
     fret_to_midi,
     scale_pitch_class_spelling,
 )
@@ -55,23 +55,8 @@ def generate_scale_pattern(
     start_midi = fret_to_midi(start_string, start_fret)
     tones = ascending_scale_tones(key, scale, start_midi, num_strings * notes_per_string)
     spelling = scale_pitch_class_spelling(key, scale)
-
-    notes = []
-    for index, string in enumerate(range(start_string, lowest_string - 1, -1)):
-        for tone_midi in tones[index * notes_per_string : (index + 1) * notes_per_string]:
-            fret = tone_midi - OPEN_STRING_MIDI[string]
-            if not (0 <= fret <= MAX_FRET):
-                raise ValueError(
-                    f"Pattern exceeds playable fret range on string {string} (fret {fret}); "
-                    "try a different start_fret/start_string."
-                )
-            octave = tone_midi // 12 - 1
-            notes.append(
-                {
-                    "position": {"string": string, "fret": fret},
-                    "pitch": f"{spelling[tone_midi % 12]}{octave}",
-                }
-            )
+    strings = list(range(start_string, lowest_string - 1, -1))
+    notes = assign_tones_to_strings(tones, strings, notes_per_string, spelling)
 
     scale_label = scale.replace("_", " ").title()
     return Drill(

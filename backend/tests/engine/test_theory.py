@@ -1,9 +1,12 @@
 import pytest
 
 from app.engine.theory import (
+    arpeggio_pitch_class_spelling,
+    ascending_arpeggio_tones,
     ascending_scale_tones,
     fret_to_midi,
     midi_to_pitch_name,
+    nearest_diatonic_tones_per_string,
     scale_pitch_class_spelling,
 )
 
@@ -112,4 +115,35 @@ def test_e_minor_pentatonic_spelling_is_correct_letter_subset() -> None:
     natural minor's spelling (dropping the 2nd and 6th degrees).
     """
     assert scale_pitch_class_spelling("E", "minor_pentatonic") == {4: "E", 7: "G", 9: "A", 11: "B", 2: "D"}
+
+
+@pytest.mark.parametrize(
+    "key,chord_type,expected",
+    [
+        ("C", "major_triad", {0: "C", 4: "E", 7: "G"}),
+        ("A", "minor_triad", {9: "A", 0: "C", 4: "E"}),
+        ("B", "diminished_triad", {11: "B", 2: "D", 5: "F"}),
+    ],
+)
+def test_arpeggio_spelling(key: str, chord_type: str, expected: dict) -> None:
+    assert arpeggio_pitch_class_spelling(key, chord_type) == expected
+
+
+def test_ascending_arpeggio_tones_c_major_triad() -> None:
+    assert ascending_arpeggio_tones("C", "major_triad", start_midi=60, count=3) == [60, 64, 67]
+
+
+def test_arpeggio_pitch_class_spelling_rejects_unsupported_chord() -> None:
+    with pytest.raises(ValueError):
+        arpeggio_pitch_class_spelling("C", "dominant7")
+
+
+def test_nearest_diatonic_tones_per_string_finds_nearest_fret_at_or_above_start() -> None:
+    # C major on strings 6,5: string6 open (E2) isn't a C-major tone (E2 is,
+    # actually — pick a start_fret where the nearest tone requires searching).
+    spelling = scale_pitch_class_spelling("C", "major")
+    notes = nearest_diatonic_tones_per_string([6, 5], start_fret=1, pitch_classes=set(spelling), spelling=spelling)
+    assert notes[0]["position"] == {"string": 6, "fret": 1}  # F2, in C major
+    assert notes[0]["pitch"] == "F2"
+    assert notes[1]["position"]["fret"] >= 1
 

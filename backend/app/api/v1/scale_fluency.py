@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -11,13 +11,16 @@ router = APIRouter(prefix="/scale-fluency", tags=["scale-fluency"])
 
 @router.post("/generate", response_model=GeneratedDrillOut)
 def generate(payload: GenerateScaleFluencyRequest, db: Session = Depends(get_db)) -> GeneratedDrillOut:
-    drill = generate_scale_fluency_drill(
-        key=payload.key,
-        scale=payload.scale,
-        start_string=payload.start_string,
-        start_fret=payload.start_fret,
-        num_strings=payload.num_strings,
-    )
+    try:
+        drill = generate_scale_fluency_drill(
+            key=payload.key,
+            scale=payload.scale,
+            start_string=payload.start_string,
+            start_fret=payload.start_fret,
+            num_strings=payload.num_strings,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     reference_data = [
         {**note, "startBeat": index, "durationBeats": 1}

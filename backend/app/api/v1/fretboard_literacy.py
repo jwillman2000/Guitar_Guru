@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -11,12 +11,15 @@ router = APIRouter(prefix="/fretboard-literacy", tags=["fretboard-literacy"])
 
 @router.post("/generate", response_model=GeneratedDrillOut)
 def generate(payload: GenerateFretboardLiteracyRequest, db: Session = Depends(get_db)) -> GeneratedDrillOut:
-    drill = generate_fretboard_literacy_drill(
-        key=payload.key,
-        string_range=payload.string_range,
-        fret_range=payload.fret_range,
-        count=payload.count,
-    )
+    try:
+        drill = generate_fretboard_literacy_drill(
+            key=payload.key,
+            string_range=payload.string_range,
+            fret_range=payload.fret_range,
+            count=payload.count,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     reference_data = [
         {**note, "startBeat": index, "durationBeats": 1}

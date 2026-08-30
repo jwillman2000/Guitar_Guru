@@ -3,3 +3,7 @@
 # LLM — see CONSTITUTION.md Article I). Called through this package's public
 # API only, so future callers (AI param assist, audio analysis) don't need
 # internal knowledge of how drills are generated — see Article V.
+
+from app.engine.fretboard_literacy import generate_drill as generate_fretboard_literacy_drill
+
+__all__ = ["generate_fretboard_literacy_drill"]
